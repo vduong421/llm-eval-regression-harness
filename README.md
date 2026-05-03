@@ -1,39 +1,58 @@
-﻿# LLM Eval Regression Harness
+# LLM Eval Regression Harness
 
-Role fit: AI testing, AI agent engineering, LLM evaluation, SDET, QA automation, and AI platform roles.
+LLM Eval Regression Harness is a local evaluation tool for testing model outputs against schema, safety, content coverage, and regression expectations.
 
-This project evaluates prompt/response outputs against deterministic checks. It is useful for showing that AI projects need test coverage too: expected keywords, banned terms, JSON validity, citation requirements, and routing labels.
+It combines deterministic checks with a local AI evaluation analyst so teams can track output quality and explain why a model response passes, fails, or needs review.
 
-## Features
+## What It Does
 
-- Loads test cases from JSON.
-- Checks generated outputs for required terms, banned terms, JSON validity, and expected route labels.
-- Produces pass/fail summaries by feature area.
-- Writes JSON and Markdown reports for review.
+- Loads evaluation cases from local samples.
+- Runs deterministic checks for JSON shape, required fields, banned terms, and content coverage.
+- Computes pass/fail counts and regression categories.
+- Produces JSON and dashboard-ready output.
+- Adds local AI analysis for release-readiness interpretation.
+
+## AI Features
+
+- Local AI copilot summarizes quality risks and failure patterns.
+- AI analyst explains what failed and what should be fixed first.
+- Recommendations are grounded in deterministic evaluation results.
+- Browser UI exposes test results and AI interpretation.
+
+## Architecture
+
+```text
+Evaluation cases
+      |
+      v
+Deterministic checks -> pass/fail metrics -> regression summary
+      |
+      v
+Local AI analyst -> quality summary + fix priority
+      |
+      v
+JSON report / browser dashboard
+```
 
 ## Run
 
-```bash
-python app.py --cases samples/cases.json --out report
-```
-
-## Engineering Impact
-- Built a Python LLM evaluation harness that validates AI-agent outputs for required content, banned terms, JSON shape, and routing labels.
-- Created regression-style test cases for support, safety, summarization, and tool-routing workflows.
-- Generated structured reports that show pass rate, failing checks, and feature-level quality trends for AI applications.
-
-## Project Workbench
-
-Launch the production-style desktop workbench with:
-
 ```powershell
-launch-workbench.bat
+run.bat
 ```
 
-What it adds:
+## Local AI Setup
 
-- Local-first AI copilot using `google/gemma-4-e4b` by default
-- Operator-focused workbench for reviewing real project inputs and outputs
-- System design, production-impact, and operational brief generation on demand
-- Grounded responses based on this project's README, sample files, and deterministic outputs
+Use LM Studio or another local OpenAI-compatible server. The default target model is `google/gemma-4-e4b`.
 
+The deterministic evaluation harness works without AI.
+
+## Main Files
+
+- `app.py` - evaluation logic and AI summary generation.
+- `server.py` - local dashboard server.
+- `eval-ui-data.json` - UI data.
+- `agents/Agent.md` - evaluation AI instructions.
+
+## Output
+
+The project outputs pass/fail metrics, violation categories, regression results, and AI-generated release-readiness guidance.
