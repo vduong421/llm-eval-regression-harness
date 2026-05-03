@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LLM Eval Regression Dashboard</title>
+<style>
+body {
+    margin:0;
+    font-family:Arial;
+    background:linear-gradient(135deg,#020617,#0f172a 45%,#111827);
+    color:#f8fafc;
+}
+.container {
+    max-width:1380px;
+    margin:auto;
+    padding:28px;
+}
+.hero {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:20px;
+    margin-bottom:22px;
+}
+h1 {
+    font-size:38px;
+    margin:0 0 8px;
+    letter-spacing:-.5px;
+}
+.subtitle {
+    color:#94a3b8;
+    font-size:16px;
+}
+.badge {
+    background:#172554;
+    color:#93c5fd;
+    border:1px solid #2563eb;
+    padding:8px 12px;
+    border-radius:999px;
+    font-weight:700;
+}
+.card {
+    background:rgba(30,41,59,.92);
+    border:1px solid rgba(148,163,184,.14);
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:22px;
+    box-shadow:0 12px 30px rgba(0,0,0,.24);
+}
+.title {
+    color:#60a5fa;
+    font-size:22px;
+    margin-bottom:14px;
+    font-weight:700;
+}
+.grid {
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:16px;
+}
+.metric {
+    background:#111827;
+    border:1px solid #334155;
+    border-radius:14px;
+    padding:18px;
+    text-align:center;
+}
+.metric .label {
+    color:#cbd5e1;
+    font-size:13px;
+}
+.metric .value {
+    font-size:30px;
+    font-weight:800;
+    margin-top:8px;
+}
+.good { color:#22c55e; }
+.bad { color:#ef4444; }
+.warn { color:#f59e0b; }
+.row {
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:center;
+}
+input {
+    width:65%;
+    padding:13px;
+    border-radius:10px;
+    border:1px solid #334155;
+    background:#0f172a;
+    color:#f8fafc;
+    font-size:16px;
+}
+button {
+    background:#3b82f6;
+    color:white;
+    border:none;
+    padding:12px 16px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:700;
+}
+button.secondary {
+    background:#0f172a;
+    border:1px solid #334155;
+    color:#93c5fd;
+}
+.status {
+    margin-top:12px;
+    color:#f59e0b;
+    font-weight:700;
+}
+.answer {
+    margin-top:16px;
+    line-height:1.6;
+    background:#0f172a;
+    border:1px solid #334155;
+    border-radius:12px;
+    padding:16px;
+}
+.chart-row {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+}
+.bar {
+    display:flex;
+    align-items:center;
+    margin:9px 0;
+    gap:10px;
+}
+.bar-label {
+    width:190px;
+    color:#cbd5e1;
+    font-size:14px;
+}
+.bar-track {
+    flex:1;
+    background:#020617;
+    border-radius:999px;
+    overflow:hidden;
+    height:18px;
+}
+.bar-fill {
+    height:18px;
+    background:linear-gradient(90deg,#2563eb,#38bdf8);
+}
+.bar-value {
+    width:52px;
+    text-align:right;
+    color:#e2e8f0;
+}
+table {
+    width:100%;
+    border-collapse:collapse;
+}
+th, td {
+    padding:12px;
+    border-bottom:1px solid #334155;
+    text-align:left;
+    vertical-align:top;
+}
+th {
+    color:#60a5fa;
+    background:#0f172a;
+}
+tr:hover { background:#334155; }
+.fail { color:#ef4444; font-weight:700; }
+.pass { color:#22c55e; font-weight:700; }
+.panel-grid {
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+    gap:22px;
+}
+@media(max-width:900px){
+    .grid { grid-template-columns:repeat(2,1fr); }
+    .chart-row, .panel-grid { grid-template-columns:1fr; }
+    input { width:100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="hero">
+    <div>
+        <h1>LLM Eval Regression Dashboard</h1>
+        <div class="subtitle">Regression testing, release gating, and local-AI triage for agent outputs.</div>
+    </div>
+    <div class="badge">Local-first AI Eval Copilot</div>
+</div>
+
+<div class="panel-grid">
+<div class="card">
+    <div class="title">AI Analyst</div>
+    <div id="analyst"></div>
+</div>
+
+<div class="card">
+    <div class="title">Ask Local AI</div>
+    <div class="row">
+        <input id="question" placeholder="Ask about eval risk, JSON failures, feature quality, release readiness...">
+        <button onclick="askAI()">Ask</button>
+    </div>
+    <div class="row" style="margin-top:14px">
+        <button class="secondary" onclick="fillQ('What are the top regression risks?')">Top Risks</button>
+        <button class="secondary" onclick="fillQ('Which feature groups failed the most?')">Feature Failures</button>
+        <button class="secondary" onclick="fillQ('Are JSON and schema outputs safe to ship?')">JSON / Schema</button>
+        <button class="secondary" onclick="fillQ('Is this eval run ready for release?')">Release Decision</button>
+    </div>
+    <div id="chatStatus" class="status"></div>
+    <div id="chatAnswer" class="answer"></div>
+</div>
+</div>
+
+<div class="card">
+    <div class="title">Eval Metrics</div>
+    <div class="grid">
+        <div class="metric"><div class="label">Total Cases</div><div id="total" class="value"></div></div>
+        <div class="metric"><div class="label">Passed</div><div id="passed" class="value good"></div></div>
+        <div class="metric"><div class="label">Failed</div><div id="failed" class="value bad"></div></div>
+        <div class="metric"><div class="label">Pass Rate</div><div id="passRate" class="value warn"></div></div>
+        <div class="metric"><div class="label">JSON Cases</div><div id="jsonCases" class="value"></div></div>
+        <div class="metric"><div class="label">Critical Failures</div><div id="criticalFailures" class="value bad"></div></div>
+    </div>
+</div>
+
+<div class="chart-row">
+    <div class="card">
+        <div class="title">Feature Pass / Fail Breakdown</div>
+        <div id="featureChart"></div>
+    </div>
+    <div class="card">
+        <div class="title">Failure Reason Breakdown</div>
+        <div id="reasonChart"></div>
+    </div>
+</div>
+
+<div class="chart-row">
+    <div class="card">
+        <div class="title">Pass vs Fail</div>
+        <div id="passFailChart"></div>
+    </div>
+    <div class="card">
+        <div class="title">Feature Pass Rate Ranking</div>
+        <div id="featureRateChart"></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="title">Release Decision</div>
+    <div id="releaseBox"></div>
+</div>
+
+<div class="card">
+    <div class="title">Failing Regression Cases</div>
+    <table id="failTable"></table>
+</div>
+
+</div>
+
+<script>
+let DATA = null;
+
+function pct(x){ return (x * 100).toFixed(1) + "%"; }
+
+function renderBars(target, obj){
+    const values = Object.values(obj || {});
+    const max = Math.max(...values, 1);
+    let html = "";
+    Object.entries(obj || {}).forEach(([k,v])=>{
+        html += `
+        <div class="bar">
+            <div class="bar-label">${k}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(v/max)*100}%"></div></div>
+            <div class="bar-value">${v}</div>
+        </div>`;
+    });
+    document.getElementById(target).innerHTML = html || "<span style='color:#94a3b8'>No data</span>";
+}
+
+function renderFeatureChart(target, obj){
+    let html = "";
+    Object.entries(obj || {}).forEach(([feature, counts])=>{
+        const pass = counts.PASS || 0;
+        const fail = counts.FAIL || 0;
+        html += `
+        <div class="bar">
+            <div class="bar-label">${feature}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${((pass + fail) ? (pass / (pass + fail)) : 0) * 100}%"></div></div>
+            <div class="bar-value">${pass}/${fail}</div>
+        </div>`;
+    });
+    document.getElementById(target).innerHTML = html || "<span style='color:#94a3b8'>No data</span>";
+}
+
+function renderPercentBars(target, obj){
+    let html = "";
+    Object.entries(obj || {}).forEach(([feature, rate])=>{
+        html += `
+        <div class="bar">
+            <div class="bar-label">${feature}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${rate * 100}%"></div></div>
+            <div class="bar-value">${(rate * 100).toFixed(0)}%</div>
+        </div>`;
+    });
+    document.getElementById(target).innerHTML = html || "<span style='color:#94a3b8'>No data</span>";
+}
+
+async function load(){
+    const res = await fetch("/data");
+    DATA = await res.json();
+    const s = DATA.summary;
+    const ai = s.ai_copilot || {};
+
+    document.getElementById("total").innerText = s.total;
+    document.getElementById("passed").innerText = s.passed;
+    document.getElementById("failed").innerText = s.failed;
+    document.getElementById("passRate").innerText = pct(s.pass_rate);
+    document.getElementById("jsonCases").innerText = s.json_case_count || 0;
+    document.getElementById("criticalFailures").innerText = s.critical_failures || 0;
+
+    document.getElementById("analyst").innerHTML = `
+        <b>Result:</b> ${ai.result || "LLM regression evaluation complete."}<br><br>
+        <b>Answer:</b> ${ai.answer || "Processed deterministic evaluation results."}<br><br>
+        <b>Evidence:</b> ${ai.evidence || "Pass rate, feature failures, and failure reasons are computed from eval cases."}<br><br>
+        <b>Next Action:</b> ${ai.next_action || "Review failing regression cases."}<br><br>
+        <b>Recommendation:</b> ${ai.recommendation || "Prioritize worst feature groups."}<br><br>
+        <b>Decision:</b> ${ai.decision || "Hold release if failures remain."}
+    `;
+
+    renderFeatureChart("featureChart", s.by_feature || {});
+    renderBars("reasonChart", s.failure_reasons || {});
+    renderBars("passFailChart", {"PASS": s.passed || 0, "FAIL": s.failed || 0});
+    renderPercentBars("featureRateChart", s.feature_pass_rates || {});
+
+    document.getElementById("releaseBox").innerHTML = `
+        <div class="metric">
+            <div class="label">Release Decision</div>
+            <div class="value ${s.release_decision === "ready" ? "good" : "bad"}">${s.release_decision}</div>
+        </div>
+    `;
+
+    let table = "<tr><th>ID</th><th>Feature</th><th>Status</th><th>Failures</th></tr>";
+    (s.failed_cases || []).forEach(r=>{
+        table += `<tr>
+            <td>${r.id}</td>
+            <td>${r.feature}</td>
+            <td class="${r.status === "PASS" ? "pass" : "fail"}">${r.status}</td>
+            <td>${(r.failures || []).join("<br>")}</td>
+        </tr>`;
+    });
+    document.getElementById("failTable").innerHTML = table;
+}
+
+function fillQ(q){
+    document.getElementById("question").value = q;
+}
+
+async function askAI(){
+    const q = document.getElementById("question").value.trim();
+    if(!q){
+        document.getElementById("chatAnswer").innerHTML = "Enter a question.";
+        return;
+    }
+
+    document.getElementById("chatStatus").innerText = "Running Local AI...";
+    document.getElementById("chatStatus").style.color = "#f59e0b";
+    document.getElementById("chatAnswer").innerHTML = "";
+
+    try{
+        const res = await fetch("/ask", { method:"POST", body:q });
+        const d = await res.json();
+        document.getElementById("chatStatus").innerText = "Local AI Finished";
+        document.getElementById("chatStatus").style.color = "#22c55e";
+        document.getElementById("chatAnswer").innerHTML = `
+            <b>Answer:</b> ${d.answer}<br><br>
+            <b>Evidence:</b> ${d.evidence}<br><br>
+            <b>Next Action:</b> ${d.next_action}<br><br>
+            <b>Recommendation:</b> ${d.recommendation}<br><br>
+            <b>Decision:</b> ${d.decision}
+        `;
+    }catch(e){
+        document.getElementById("chatStatus").innerText = "Local AI Failed";
+        document.getElementById("chatStatus").style.color = "#ef4444";
+    }
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-# LLM Eval Regression Harness
+﻿# LLM Eval Regression Harness
 
 Role fit: AI testing, AI agent engineering, LLM evaluation, SDET, QA automation, and AI platform roles.
 
@@ -17,8 +17,23 @@ This project evaluates prompt/response outputs against deterministic checks. It 
 python app.py --cases samples/cases.json --out report
 ```
 
-## Resume Bullets
-
+## Engineering Impact
 - Built a Python LLM evaluation harness that validates AI-agent outputs for required content, banned terms, JSON shape, and routing labels.
 - Created regression-style test cases for support, safety, summarization, and tool-routing workflows.
 - Generated structured reports that show pass rate, failing checks, and feature-level quality trends for AI applications.
+
+## Project Workbench
+
+Launch the production-style desktop workbench with:
+
+```powershell
+launch-workbench.bat
+```
+
+What it adds:
+
+- Local-first AI copilot using `google/gemma-4-e4b` by default
+- Operator-focused workbench for reviewing real project inputs and outputs
+- System design, production-impact, and operational brief generation on demand
+- Grounded responses based on this project's README, sample files, and deterministic outputs
+
