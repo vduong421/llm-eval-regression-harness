@@ -2,6 +2,10 @@
 
 LLM Eval Regression Harness is a local evaluation tool for testing model outputs against schema, safety, content coverage, and regression expectations.
 
+## Product Screenshot
+
+![Product screenshot](assets/product-screenshot.png)
+
 It combines deterministic checks with a local AI evaluation analyst so teams can track output quality and explain why a model response passes, fails, or needs review.
 
 ## What It Does
